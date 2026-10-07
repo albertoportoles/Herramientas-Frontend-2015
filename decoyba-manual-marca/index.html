@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<title>Manual de marca — acceso restringido</title>
+<style>
+:root{--bg:#F4F2EC;--card:#FBFAF8;--ink:#272726;--muted:#73695B;--line:#DDD8CC;--accent:#272726;--on-accent:#F4F2EC;--err:#B03A2E;color-scheme:light}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#1C1B1A;--card:#262524;--ink:#F4F2EC;--muted:#B5AC9E;--line:#3A3836;--accent:#F4F2EC;--on-accent:#1C1B1A;--err:#E07B6F;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#1C1B1A;--card:#262524;--ink:#F4F2EC;--muted:#B5AC9E;--line:#3A3836;--accent:#F4F2EC;--on-accent:#1C1B1A;--err:#E07B6F;color-scheme:dark}
+*{box-sizing:border-box}
+body{margin:0;min-height:100vh;display:grid;place-items:center;padding:16px;background:var(--bg);color:var(--ink);font:400 15px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif}
+.gate{width:min(24rem,100%);padding:2rem 1.75rem;border:1px solid var(--line);border-radius:16px;background:var(--card)}
+.gate h1{margin:0 0 .25rem;font-size:1.25rem;font-weight:600;letter-spacing:-.01em}
+.gate p{margin:0 0 1.5rem;color:var(--muted);font-size:.875rem}
+label{display:block;margin-bottom:.4rem;font-size:.8125rem;font-weight:500}
+input{width:100%;padding:.7rem .85rem;border:1px solid var(--line);border-radius:10px;background:transparent;color:var(--ink);font:inherit}
+input:focus{outline:2px solid var(--accent);outline-offset:1px}
+button{width:100%;margin-top:1rem;padding:.75rem;border:0;border-radius:999px;background:var(--accent);color:var(--on-accent);font:600 .9rem/1 inherit;cursor:pointer}
+button:disabled{opacity:.6;cursor:progress}
+.msg{min-height:1.25rem;margin-top:.85rem;font-size:.8125rem;color:var(--muted)}
+.msg.is-error{color:var(--err)}
+.bar{height:3px;margin-top:.5rem;border-radius:3px;background:var(--line);overflow:hidden;visibility:hidden}
+.bar i{display:block;height:100%;width:0;background:var(--accent);transition:width .15s}
+.bar.is-on{visibility:visible}
+</style>
+</head>
+<body>
+<form class="gate" id="gate" autocomplete="off">
+  <h1>Manual de marca</h1>
+  <p>Contenido privado. Introduce la contraseña para acceder.</p>
+  <label for="pw">Contraseña</label>
+  <input id="pw" type="password" autocomplete="current-password" required autofocus>
+  <button id="go" type="submit">Entrar</button>
+  <div class="bar" id="bar"><i></i></div>
+  <div class="msg" id="msg" role="status" aria-live="polite"></div>
+</form>
+<noscript><p style="text-align:center">Este manual necesita JavaScript para descifrarse.</p></noscript>
+<script>
+(() => {
+  const VAULT = 'vault/';
+  const SESSION_KEY = 'manual-vault-key';
+  const IV_BYTES = 12;
+  const form = document.getElementById('gate');
+  const pw = document.getElementById('pw');
+  const go = document.getElementById('go');
+  const msg = document.getElementById('msg');
+  const bar = document.getElementById('bar');
+
+  const say = (text, isError) => { msg.textContent = text; msg.classList.toggle('is-error', !!isError); };
+  const b64ToBytes = s => Uint8Array.from(atob(s), c => c.charCodeAt(0));
+  const bytesToB64 = b => btoa(String.fromCharCode(...b));
+  const ssGet = k => { try { return sessionStorage.getItem(k); } catch (_) { return null; } };
+  const ssSet = (k, v) => { try { sessionStorage.setItem(k, v); } catch (_) {} };
+  const ssDel = k => { try { sessionStorage.removeItem(k); } catch (_) {} };
+
+  if (!window.crypto || !crypto.subtle) {
+    say('Abre el manual desde https:// o http://localhost: el navegador solo permite descifrar en un contexto seguro.', true);
+    go.disabled = true;
+    return;
+  }
+
+  const fetchBytes = async url => {
+    const res = await fetch(url, { cache: 'no-cache' });
+    if (!res.ok) throw new Error('No se pudo cargar ' + url + ' (' + res.status + ')');
+    return new Uint8Array(await res.arrayBuffer());
+  };
+  const decrypt = async (key, bytes) =>
+    new Uint8Array(await crypto.subtle.decrypt({ name: 'AES-GCM', iv: bytes.subarray(0, IV_BYTES) }, key, bytes.subarray(IV_BYTES)));
+
+  const deriveKey = async (password, config) => {
+    const base = await crypto.subtle.importKey('raw', new TextEncoder().encode(password), 'PBKDF2', false, ['deriveKey']);
+    return crypto.subtle.deriveKey(
+      { name: 'PBKDF2', hash: 'SHA-256', salt: b64ToBytes(config.salt), iterations: config.iterations },
+      base, { name: 'AES-GCM', length: 256 }, true, ['decrypt']
+    );
+  };
+
+  const loadConfig = async () => {
+    const res = await fetch(VAULT + 'config.json', { cache: 'no-cache' });
+    if (!res.ok) throw new Error('No se encuentra vault/config.json');
+    return res.json();
+  };
+
+  // Returns the manifest, or null when the key is wrong (AES-GCM auth fails).
+  const openManifest = async key => {
+    try {
+      return JSON.parse(new TextDecoder().decode(await decrypt(key, await fetchBytes(VAULT + 'manifest.bin'))));
+    } catch (e) {
+      if (e && e.name === 'OperationError') return null;
+      throw e;
+    }
+  };
+
+  const decryptAll = async (key, files) => {
+    const entries = Object.entries(files);
+    const total = entries.reduce((n, [, f]) => n + f.size, 0) || 1;
+    let done = 0;
+    const out = {};
+    bar.classList.add('is-on');
+    let next = 0;
+    const worker = async () => {
+      while (next < entries.length) {
+        const [path, f] = entries[next++];
+        out[path] = { type: f.type, bytes: await decrypt(key, await fetchBytes(VAULT + 'f/' + f.id + '.bin')) };
+        done += f.size;
+        bar.firstElementChild.style.width = Math.round(done / total * 100) + '%';
+        say('Descifrando… ' + Math.round(done / total * 100) + ' %');
+      }
+    };
+    await Promise.all(Array.from({ length: 6 }, worker));
+    return out;
+  };
+
+  const render = files => {
+    const urls = {};
+    const names = {};
+    for (const [path, f] of Object.entries(files)) {
+      if (!/^(assets|fonts)\//.test(path)) continue;
+      const url = URL.createObjectURL(new Blob([f.bytes], { type: f.type }));
+      urls[path] = url;
+      names[url] = path.split('/').pop();
+    }
+    // Lets the manual's own download code name files after the original asset.
+    window.__vaultName = url => names[url];
+
+    const text = path => {
+      if (!files[path]) throw new Error('Falta ' + path + ' en el archivo cifrado');
+      return new TextDecoder().decode(files[path].bytes);
+    };
+    const rewrite = s => s.replace(/(?:assets|fonts)\/[^"'()\s?#]+(?:\?[^"'()\s#]*)?/g, m => urls[m.split('?')[0]] || m);
+
+    const css = rewrite(text('decoyba-brand.css'));
+    const js = text('decoyba-brand.js')
+      .replace('const filenameFromUrl=url=>', 'const filenameFromUrl=url=>window.__vaultName?.(url)||')
+      .replace("a.download=filename||''", 'a.download=filename||filenameFromUrl(url)')
+      .replace("img.getAttribute('src').split('/').pop()", "filenameFromUrl(img.getAttribute('src'))");
+    const doc = new DOMParser().parseFromString(rewrite(text('index.html')), 'text/html');
+
+    doc.querySelectorAll('link[href^="decoyba-brand.css"], script[src^="decoyba-brand.js"]').forEach(n => n.remove());
+    doc.querySelectorAll('a[download]').forEach(a => {
+      const name = names[a.getAttribute('href')];
+      if (name && !a.getAttribute('download')) a.setAttribute('download', name);
+    });
+
+    document.documentElement.lang = doc.documentElement.lang || 'es';
+    document.title = doc.title;
+    document.head.replaceChildren(...[...doc.head.childNodes].map(n => document.importNode(n, true)));
+    const style = document.createElement('style');
+    style.textContent = css;
+    document.head.appendChild(style);
+    document.body.replaceWith(document.importNode(doc.body, true));
+
+    const script = document.createElement('script');
+    script.src = URL.createObjectURL(new Blob([js], { type: 'text/javascript' }));
+    script.onload = () => {
+      const target = location.hash && document.getElementById(decodeURIComponent(location.hash.slice(1)));
+      if (target) target.scrollIntoView();
+    };
+    document.body.appendChild(script);
+  };
+
+  const unlock = async key => {
+    const manifest = await openManifest(key);
+    if (!manifest) return false;
+    go.disabled = true;
+    pw.disabled = true;
+    render(await decryptAll(key, manifest.files));
+    return true;
+  };
+
+  form.addEventListener('submit', async e => {
+    e.preventDefault();
+    go.disabled = true;
+    say('Comprobando…');
+    try {
+      const key = await deriveKey(pw.value, await loadConfig());
+      const raw = new Uint8Array(await crypto.subtle.exportKey('raw', key));
+      if (await unlock(key)) {
+        ssSet(SESSION_KEY, bytesToB64(raw));
+      } else {
+        say('Contraseña incorrecta.', true);
+        go.disabled = false;
+        pw.select();
+      }
+    } catch (err) {
+      say(err.message || 'No se pudo abrir el manual.', true);
+      go.disabled = false;
+      pw.disabled = false;
+    }
+  });
+
+  // Same tab reload: reuse the key for this session instead of asking again.
+  const saved = ssGet(SESSION_KEY);
+  if (saved) {
+    say('Abriendo…');
+    crypto.subtle.importKey('raw', b64ToBytes(saved), 'AES-GCM', false, ['decrypt'])
+      .then(unlock)
+      .then(ok => { if (!ok) { ssDel(SESSION_KEY); say(''); } })
+      .catch(() => { ssDel(SESSION_KEY); say(''); go.disabled = false; pw.disabled = false; });
+  }
+})();
+</script>
+</body>
+</html>
