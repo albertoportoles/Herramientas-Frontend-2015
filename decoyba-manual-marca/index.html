@@ -4,38 +4,140 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="robots" content="noindex,nofollow">
-<title>Manual de marca — acceso restringido</title>
+<title>Manual de marca — acceso privado</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;1,300&display=swap">
 <style>
-:root{--bg:#F4F2EC;--card:#FBFAF8;--ink:#272726;--muted:#73695B;--line:#DDD8CC;--accent:#272726;--on-accent:#F4F2EC;--err:#B03A2E;color-scheme:light}
-@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#1C1B1A;--card:#262524;--ink:#F4F2EC;--muted:#B5AC9E;--line:#3A3836;--accent:#F4F2EC;--on-accent:#1C1B1A;--err:#E07B6F;color-scheme:dark}}
-:root[data-theme="dark"]{--bg:#1C1B1A;--card:#262524;--ink:#F4F2EC;--muted:#B5AC9E;--line:#3A3836;--accent:#F4F2EC;--on-accent:#1C1B1A;--err:#E07B6F;color-scheme:dark}
+/* Numéricco Design System — tokens used by the login screen (tokens/colors, typography, spacing). */
+@font-face{font-family:"PP Neue Montreal";src:url("login/fonts/PPNeueMontreal-Book.otf") format("opentype");font-weight:400;font-style:normal;font-display:swap}
+@font-face{font-family:"PP Neue Montreal";src:url("login/fonts/PPNeueMontreal-Medium.otf") format("opentype");font-weight:500;font-style:normal;font-display:swap}
+@font-face{font-family:"Space Mono";src:url("login/fonts/SpaceMono-Regular.ttf") format("truetype");font-weight:400;font-style:normal;font-display:swap}
+:root{
+  --n-warm-50:#F7F5F1;--n-warm-100:#F0EEE9;--n-warm-400:#C9BFB3;--n-warm-500:#B0A69B;--n-warm-600:#978E85;
+  --n-warm-650:#8A8178;--n-warm-700:#6B6963;--n-warm-800:#5C5A54;--n-warm-950:#1C1C1C;
+  --n-ink:#121212;--n-ink-soft:#1A1A1A;--n-danger-ink:#A32E22;--n-danger:#E89489;
+
+  --bg-page:var(--n-warm-100);
+  --bg-field:var(--n-warm-50);
+  --bg-inverse:var(--n-ink);
+  --text-primary:var(--n-ink-soft);
+  --text-secondary:var(--n-warm-800);
+  --text-quiet:var(--n-warm-700);
+  --text-inverse:var(--n-warm-100);
+  --text-danger:var(--n-danger-ink);
+  --border-hairline:var(--n-warm-400);
+  --border-ui:var(--n-warm-650);
+  --border-strong:var(--n-ink);
+  --bg-texture:url("login/bg-light-01.jpg");
+  --logo:url("login/numericco-logo-positivo.png");
+
+  --font-display:"PP Editorial New","Cormorant Garamond",Georgia,serif;
+  --font-sans:"PP Neue Montreal",-apple-system,"Segoe UI",Helvetica,Arial,sans-serif;
+  --font-mono:"Space Mono",ui-monospace,"SF Mono",Menlo,Consolas,monospace;
+  --size-display-l:48px;--size-body:16px;--size-body-s:15px;--size-caption:13px;--size-mono-eyebrow:11px;
+  --tracking-display:-0.020em;--tracking-sans:-0.022em;--tracking-mono:0.160em;--tracking-mono-wide:0.200em;
+
+  --page-margin:36px;--space-3xs:4px;--space-2xs:8px;--space-xs:12px;--space-s:24px;--space-m:36px;--space-l:48px;
+  --radius-button:5px;
+  --duration-fast:160ms;--duration-base:280ms;--ease-brand:cubic-bezier(0.22,0.61,0.36,1);
+  color-scheme:light;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg-page:var(--n-ink);--bg-field:var(--n-warm-950);--bg-inverse:var(--n-warm-100);
+  --text-primary:var(--n-warm-100);--text-secondary:var(--n-warm-500);--text-quiet:var(--n-warm-600);
+  --text-inverse:var(--n-ink);--text-danger:var(--n-danger);
+  --border-hairline:rgba(201,191,179,0.45);--border-ui:var(--n-warm-600);--border-strong:var(--n-warm-100);
+  --bg-texture:url("login/bg-dark-01.jpg");--logo:url("login/numericco-logo-negativo.png");
+  color-scheme:dark;
+}}
+:root[data-theme="dark"]{
+  --bg-page:var(--n-ink);--bg-field:var(--n-warm-950);--bg-inverse:var(--n-warm-100);
+  --text-primary:var(--n-warm-100);--text-secondary:var(--n-warm-500);--text-quiet:var(--n-warm-600);
+  --text-inverse:var(--n-ink);--text-danger:var(--n-danger);
+  --border-hairline:rgba(201,191,179,0.45);--border-ui:var(--n-warm-600);--border-strong:var(--n-warm-100);
+  --bg-texture:url("login/bg-dark-01.jpg");--logo:url("login/numericco-logo-negativo.png");
+  color-scheme:dark;
+}
+
 *{box-sizing:border-box}
-body{margin:0;min-height:100vh;display:grid;place-items:center;padding:16px;background:var(--bg);color:var(--ink);font:400 15px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif}
-.gate{width:min(24rem,100%);padding:2rem 1.75rem;border:1px solid var(--line);border-radius:16px;background:var(--card)}
-.gate h1{margin:0 0 .25rem;font-size:1.25rem;font-weight:600;letter-spacing:-.01em}
-.gate p{margin:0 0 1.5rem;color:var(--muted);font-size:.875rem}
-label{display:block;margin-bottom:.4rem;font-size:.8125rem;font-weight:500}
-input{width:100%;padding:.7rem .85rem;border:1px solid var(--line);border-radius:10px;background:transparent;color:var(--ink);font:inherit}
-input:focus{outline:2px solid var(--accent);outline-offset:1px}
-button{width:100%;margin-top:1rem;padding:.75rem;border:0;border-radius:999px;background:var(--accent);color:var(--on-accent);font:600 .9rem/1 inherit;cursor:pointer}
-button:disabled{opacity:.6;cursor:progress}
-.msg{min-height:1.25rem;margin-top:.85rem;font-size:.8125rem;color:var(--muted)}
-.msg.is-error{color:var(--err)}
-.bar{height:3px;margin-top:.5rem;border-radius:3px;background:var(--line);overflow:hidden;visibility:hidden}
-.bar i{display:block;height:100%;width:0;background:var(--accent);transition:width .15s}
+html,body{margin:0}
+body{
+  min-height:100vh;min-height:100dvh;display:grid;grid-template-rows:auto 1fr auto;
+  padding:var(--page-margin);gap:var(--space-l);
+  background:var(--bg-page) var(--bg-texture) center/cover no-repeat fixed;
+  color:var(--text-primary);font-family:var(--font-sans);font-size:var(--size-body);line-height:1.6;
+  letter-spacing:var(--tracking-sans);-webkit-font-smoothing:antialiased;
+}
+.eyebrow{margin:0;font-family:var(--font-mono);font-size:var(--size-mono-eyebrow);line-height:1;letter-spacing:var(--tracking-mono);text-transform:uppercase;color:var(--text-quiet);white-space:nowrap}
+
+.top{display:flex;align-items:center;justify-content:space-between;gap:var(--space-s)}
+.logo{display:block;width:129px;height:24px;background:var(--logo) left center/contain no-repeat}
+
+.gate{align-self:center;width:min(400px,100%);display:flex;flex-direction:column}
+.gate .eyebrow{margin-bottom:var(--space-s)}
+.gate h1{margin:0 0 var(--space-xs);font-family:var(--font-display);font-weight:300;font-size:var(--size-display-l);line-height:1;letter-spacing:var(--tracking-display)}
+.gate h1 em{font-style:italic}
+.lead{margin:0 0 var(--space-m);color:var(--text-secondary)}
+
+label{display:block;margin-bottom:var(--space-2xs);font-size:var(--size-caption);font-weight:500;line-height:1.2}
+input{
+  display:block;width:100%;height:48px;padding:0 var(--space-xs);
+  border:1px solid var(--border-ui);border-radius:var(--radius-button);background:var(--bg-field);
+  color:var(--text-primary);font:400 var(--size-body)/1 var(--font-sans);letter-spacing:0;
+  transition:border-color var(--duration-fast) var(--ease-brand);
+}
+input:hover{border-color:var(--border-strong)}
+input:focus-visible{outline:1px solid var(--border-strong);outline-offset:2px;border-color:var(--border-strong)}
+input[aria-invalid="true"]{border-color:var(--text-danger)}
+input:disabled{opacity:.4}
+
+button{
+  margin-top:var(--space-s);height:48px;padding:0 var(--space-m);
+  border:1px solid var(--bg-inverse);border-radius:var(--radius-button);background:var(--bg-inverse);color:var(--text-inverse);
+  font:400 var(--size-body-s)/1.2 var(--font-sans);letter-spacing:var(--tracking-sans);cursor:pointer;
+  transition:opacity var(--duration-fast) var(--ease-brand);
+}
+button:hover,button:active{opacity:.72}
+button:focus-visible{outline:1px solid var(--border-strong);outline-offset:2px}
+button:disabled{opacity:.4;cursor:progress}
+
+.bar{height:1px;margin-top:var(--space-s);background:var(--border-hairline);visibility:hidden}
+.bar i{display:block;height:100%;width:0;background:var(--border-strong);transition:width var(--duration-base) var(--ease-brand)}
 .bar.is-on{visibility:visible}
+.msg{min-height:1.6em;margin-top:var(--space-xs);font-size:var(--size-caption);color:var(--text-quiet)}
+.msg.is-error{color:var(--text-danger)}
+
+.foot{display:flex;justify-content:space-between;gap:var(--space-s);flex-wrap:wrap}
+
+@media (max-width:600px){
+  body{--page-margin:16px;padding:24px var(--page-margin)}
+  .gate{align-self:start;padding-top:var(--space-l)}
+  .gate h1{font-size:40px}
+  .top .eyebrow,.foot .eyebrow:last-child{display:none}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
 </style>
 </head>
 <body>
+<header class="top">
+  <span class="logo" role="img" aria-label="Numéricco"></span>
+  <p class="eyebrow">Acceso privado</p>
+</header>
 <form class="gate" id="gate" autocomplete="off">
-  <h1>Manual de marca</h1>
-  <p>Contenido privado. Introduce la contraseña para acceder.</p>
+  <p class="eyebrow">01. Manual de marca</p>
+  <h1>Accede al <em>manual</em></h1>
+  <p class="lead">Introduce la contraseña que te hemos facilitado para ver el manual de marca.</p>
   <label for="pw">Contraseña</label>
-  <input id="pw" type="password" autocomplete="current-password" required autofocus>
+  <input id="pw" type="password" autocomplete="current-password" required autofocus aria-describedby="msg">
   <button id="go" type="submit">Entrar</button>
   <div class="bar" id="bar"><i></i></div>
   <div class="msg" id="msg" role="status" aria-live="polite"></div>
 </form>
+<footer class="foot">
+  <p class="eyebrow">© Numéricco</p>
+  <p class="eyebrow">Cifrado AES-256 · en tu navegador</p>
+</footer>
 <noscript><p style="text-align:center">Este manual necesita JavaScript para descifrarse.</p></noscript>
 <script>
 (() => {
@@ -48,7 +150,11 @@ button:disabled{opacity:.6;cursor:progress}
   const msg = document.getElementById('msg');
   const bar = document.getElementById('bar');
 
-  const say = (text, isError) => { msg.textContent = text; msg.classList.toggle('is-error', !!isError); };
+  const say = (text, isError) => {
+    msg.textContent = text;
+    msg.classList.toggle('is-error', !!isError);
+    pw.setAttribute('aria-invalid', isError ? 'true' : 'false');
+  };
   const b64ToBytes = s => Uint8Array.from(atob(s), c => c.charCodeAt(0));
   const bytesToB64 = b => btoa(String.fromCharCode(...b));
   const ssGet = k => { try { return sessionStorage.getItem(k); } catch (_) { return null; } };
